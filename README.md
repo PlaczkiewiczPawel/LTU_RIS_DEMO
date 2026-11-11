@@ -1,57 +1,57 @@
 # Camera-ready RIS/OFDM demo
 
-Pakiet zawiera trzy niezależne komponenty:
+The package contains three independent components:
 
-- `Ris` - sterowanie RIS przez port szeregowy, wzorce i wykresy biegunowe.
-- `Rx` - odbiornik OFDM w Pythonie z podglądem konstelacji.
-- `Tx` - minimalny nadajnik OFDM dla MATLAB-a i USRP.
+- `Ris` — RIS control via a serial port, patterns, and polar plots.
+- `Rx` — a Python OFDM receiver with a constellation display.
+- `Tx` — a minimal OFDM transmitter for MATLAB and USRP.
 
-Katalog jest przygotowany jako katalog główny osobnego repozytorium. Nie wymaga
-plików z nadrzędnego repozytorium.
+This directory is intended to serve as the root directory of a standalone
+repository. It does not require any files from the parent repository.
 
-## Środowisko Python
+## Python environment
 
-Utwórz środowisko w katalogu głównym pakietu:
+Create a virtual environment in the package's root directory:
 
 ```powershell
 python -m venv .venv
 .venv\Scripts\python -m pip install -r requirements.txt
 ```
 
-Na Linuxie lub macOS użyj `.venv/bin/python`. Tkinter nie jest instalowany przez
-pip; na Windowsie jest zwykle częścią Pythona, a na Linuxie może wymagać pakietu
-systemowego, np. `python3-tk`. Odbiornik wymaga także działającego sterownika UHD
-i zgodnych Python bindings dla używanej wersji UHD.
+On Linux or macOS, use `.venv/bin/python`. Tkinter is not installed via pip;
+on Windows, it is usually included with Python, while on Linux it may require
+a system package such as `python3-tk`. The receiver also requires a working UHD
+driver and compatible Python bindings for the installed UHD version.
 
 ## RIS
 
-Konfiguracja portu i wartości domyślne znajdują się na początku
-`Ris/ris_control_gui.py`. Program nie łączy się z RIS-em podczas uruchamiania;
-port jest otwierany dopiero przy wysłaniu wzorca.
+The port configuration and default values are defined in `Ris/ris_config.py`.
+The application does not connect to the RIS at startup; the port is opened only
+when a pattern is sent.
 
-- Windows: uruchom `Ris/Start_RIS_windows.vbs`.
-- Linux: uruchom `sh Ris/Start_RIS_linux.sh`.
-- macOS: uruchom `Ris/Start_RIS_macos.command`.
+- Windows: run `Ris/Start_RIS_windows.vbs`.
+- Linux: run `sh Ris/Start_RIS_linux.sh`.
+- macOS: run `Ris/Start_RIS_macos.command`.
 
-## Odbiornik RX
+## RX receiver
 
-Parametry radia i OFDM znajdują się w `Rx/rx_config.py`.
+The radio and OFDM parameters are defined in `Rx/rx_config.py`.
 
-- Windows: uruchom `Rx/Start_RX_windows.vbs`.
-- Linux: uruchom `sh Rx/Start_RX_linux.sh`.
-- macOS: uruchom `Rx/Start_RX_macos.command`.
+- Windows: run `Rx/Start_RX_windows.vbs`.
+- Linux: run `sh Rx/Start_RX_linux.sh`.
+- macOS: run `Rx/Start_RX_macos.command`.
 
-## Nadajnik TX
+## TX transmitter
 
-Nadajnik wymaga MATLAB-a, Communications Toolbox oraz Communications Toolbox
-Support Package for USRP Radio. Te składniki nie są instalowane przez pip.
+The transmitter requires MATLAB, Communications Toolbox, and Communications
+Toolbox Support Package for USRP Radio. These components are not installed via
+pip.
 
-W MATLAB-ie przejdź do katalogu `Tx`, dostosuj ustawienia radia w
-`defaultConfig.m`, a następnie uruchom:
+In MATLAB, navigate to the `Tx` directory, adjust the radio settings in
+`defaultConfig.m`, and then run:
 
 ```matlab
 runTransmitter
 ```
 
-Skrypt korzysta wyłącznie z plików znajdujących się w `Tx` i pakiecie
-`Tx/+ofdm`.
+The script uses only the files located in `Tx` and the `Tx/+ofdm` package.

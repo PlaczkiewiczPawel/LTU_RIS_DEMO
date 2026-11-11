@@ -11,27 +11,12 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import ttk
 
+import ris_config as cfg
+
 try:
     import serial
 except ImportError:
     serial = None
-
-
-RIS_PORT = "COM4"
-RIS_ID = 1
-BAUD_RATE = 115200
-SERIAL_TIMEOUT_S = 2.0
-PATTERN_SETTLE_TIME_S = 0.1
-SWIPE_PATTERN_FILE = Path(__file__).with_name(
-    "ris_patterns_16x16_5.24GHz_angles.json"
-)
-POLAR_PLOT_DIRECTORY = Path(__file__).with_name("plots_polar")
-
-DEFAULT_MODE_ANGLES = {
-    "LEFT": -20.0,
-    "BOTH": 55.0,
-    "RIGHT": -29.5,
-}
 
 
 def load_swipe_patterns(path: Path) -> list[dict]:
@@ -61,7 +46,7 @@ class RisController:
         with self._lock:
             port = self._get_port()
             port.write(f"!{pattern}\n".encode("utf-8"))
-            time.sleep(PATTERN_SETTLE_TIME_S)
+            time.sleep(cfg.PATTERN_SETTLE_TIME_SECONDS)
             return port.readline().decode("utf-8", errors="replace").rstrip()
 
     def close(self) -> None:
@@ -74,16 +59,14 @@ class RisController:
             raise RuntimeError("PySerial is not installed. Run: pip install pyserial")
         if self._port is None or not self._port.is_open:
             self._port = serial.Serial(
-                RIS_PORT,
-                BAUD_RATE,
-                timeout=SERIAL_TIMEOUT_S,
+                cfg.RIS_PORT,
+                cfg.BAUD_RATE,
+                timeout=cfg.SERIAL_TIMEOUT_SECONDS,
             )
         return self._port
 
 
 class RisControlApp:
-    POLL_INTERVAL_MS = 50
-
     def __init__(self, root: tk.Tk) -> None:
         self.root = root
         self.controller = RisController()
@@ -102,32 +85,47 @@ class RisControlApp:
         self.plot_image = None
 
         try:
-            self.swipe_patterns = load_swipe_patterns(SWIPE_PATTERN_FILE)
+            self.swipe_patterns = load_swipe_patterns(cfg.SWIPE_PATTERN_FILE)
             self.swipe_load_error = None
         except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
             self.swipe_patterns = []
             self.swipe_load_error = str(exc)
 
-        self.status = tk.StringVar(value=f"Ready - {RIS_PORT}, ID {RIS_ID}")
-        self.interval = tk.IntVar(value=1)
+        self.status = tk.StringVar(
+            value=f"Ready - {cfg.RIS_PORT}, ID {cfg.RIS_ID}"
+        )
+        self.interval = tk.IntVar(value=cfg.DEFAULT_AUTOMATIC_INTERVAL_SECONDS)
         self.custom_angle = tk.StringVar(value="0")
         self.mode_angles = {
             mode: tk.StringVar(value=f"{angle:g}")
-            for mode, angle in DEFAULT_MODE_ANGLES.items()
+            for mode, angle in cfg.DEFAULT_MODE_ANGLES.items()
         }
 
         self._build_gui()
         self.worker = threading.Thread(target=self._worker_loop, daemon=True)
         self.worker.start()
-        self.root.after(self.POLL_INTERVAL_MS, self._process_results)
+        self.root.after(
+            cfg.GUI_POLL_INTERVAL_MILLISECONDS,
+            self._process_results,
+        )
         self.root.protocol("WM_DELETE_WINDOW", self._close)
 
     def _build_gui(self) -> None:
         self.root.title("RIS 5 GHz control")
         self.root.resizable(False, False)
+        self.root.geometry(f"{cfg.GUI_WINDOW_WIDTH}x{cfg.GUI_WINDOW_HEIGHT}")
 
-        frame = ttk.Frame(self.root, padding=18)
+        frame = ttk.Frame(
+            self.root,
+            width=cfg.GUI_WINDOW_WIDTH,
+            height=cfg.GUI_WINDOW_HEIGHT,
+            padding=18,
+        )
         frame.grid(row=0, column=0, sticky="nsew")
+        frame.grid_propagate(False)
+        for column in range(3):
+            frame.columnconfigure(column, weight=1, uniform="mode")
+        frame.rowconfigure(9, weight=1)
 
         ttk.Label(frame, text="Select RIS mode", font=("Segoe UI", 14, "bold")).grid(
             row=0, column=0, columnspan=3, pady=(0, 14)
@@ -212,8 +210,8 @@ class RisControlApp:
         )
         tk.Scale(
             frame,
-            from_=1,
-            to=5,
+            from_=cfg.MINIMUM_AUTOMATIC_INTERVAL_SECONDS,
+            to=cfg.MAXIMUM_AUTOMATIC_INTERVAL_SECONDS,
             orient="horizontal",
             resolution=1,
             variable=self.interval,
@@ -222,10 +220,19 @@ class RisControlApp:
         ).grid(row=8, column=0, columnspan=3, pady=(0, 10))
 
         ttk.Separator(frame).grid(
-            row=9, column=0, columnspan=3, sticky="ew", pady=(2, 10)
+            row=9, column=0, columnspan=3, sticky="sew", pady=(2, 10)
         )
-        ttk.Label(frame, textvariable=self.status, anchor="center").grid(
-            row=10, column=0, columnspan=3, sticky="ew"
+        ttk.Label(
+            frame,
+            textvariable=self.status,
+            anchor="center",
+            justify="center",
+            wraplength=cfg.GUI_STATUS_WRAP_LENGTH,
+        ).grid(
+            row=10,
+            column=0,
+            columnspan=3,
+            sticky="ew",
         )
 
         self.plot_panel = ttk.Frame(self.root, padding=(0, 18, 18, 18))
@@ -446,7 +453,10 @@ class RisControlApp:
                         lambda: self._queue_swipe_pattern(self.generation),
                     )
 
-        self.root.after(self.POLL_INTERVAL_MS, self._process_results)
+        self.root.after(
+            cfg.GUI_POLL_INTERVAL_MILLISECONDS,
+            self._process_results,
+        )
 
     def _toggle_plot_panel(self) -> None:
         self.plot_visible = not self.plot_visible
@@ -477,7 +487,7 @@ class RisControlApp:
             f"pattern_{int(pattern['id']):03d}_target_"
             f"{angle_prefix}{angle_token}deg.png"
         )
-        plot_path = POLAR_PLOT_DIRECTORY / filename
+        plot_path = cfg.POLAR_PLOT_DIRECTORY / filename
         if not plot_path.exists():
             self.plot_image = None
             self.plot_label.configure(

@@ -1,0 +1,9 @@
+.venv/
+.logs/
+__pycache__/
+*.py[cod]
+.DS_Store
+Thumbs.db
+*.asv
+slprj/
+codegen/

@@ -43,7 +43,19 @@ python3 -m venv .venv
 ```
 
 Tkinter is not installed via pip. On Windows, it is usually included with
-Python, while on Linux it may require a system package such as `python3-tk`.
+Python. On Debian or Ubuntu, install it with:
+
+```sh
+sudo apt update
+sudo apt install python3-tk
+```
+
+On Fedora or RHEL-based distributions, use:
+
+```sh
+sudo dnf install python3-tkinter
+```
+
 On macOS, the Python.org installer includes Tkinter. When using Python from
 Homebrew, install the matching package separately, for example:
 

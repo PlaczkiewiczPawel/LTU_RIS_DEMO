@@ -42,10 +42,18 @@ python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
 ```
 
-Tkinter is not installed via pip; on Windows, it is usually included with
+Tkinter is not installed via pip. On Windows, it is usually included with
 Python, while on Linux it may require a system package such as `python3-tk`.
-The receiver also requires a working UHD driver and compatible Python bindings
-for the installed UHD version.
+On macOS, the Python.org installer includes Tkinter. When using Python from
+Homebrew, install the matching package separately, for example:
+
+```sh
+brew install python-tk@3.13
+```
+
+Replace `3.13` with the installed Python minor version if necessary. The
+receiver also requires a working UHD driver and compatible Python bindings for
+the installed UHD version.
 
 ## RIS
 

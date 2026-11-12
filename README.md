@@ -9,19 +9,43 @@ The package contains three independent components:
 This directory is intended to serve as the root directory of a standalone
 repository. It does not require any files from the parent repository.
 
-## Python environment
+## Python dependencies
 
-Create a virtual environment in the package's root directory:
+Python `>=3.10, <3.14` is required because the receiver depends on the UHD
+Python bindings, which are not compatible with Python 3.14 or newer.
+
+To install the dependencies into the global Python environment, run this from
+the package's root directory:
+
+```powershell
+python -m pip install -r requirements.txt
+```
+
+On systems where Python 3 is available as `python3`, use:
+
+```sh
+python3 -m pip install -r requirements.txt
+```
+
+Alternatively, create a virtual environment and install the dependencies into
+it. On Windows, run:
 
 ```powershell
 python -m venv .venv
 .venv\Scripts\python -m pip install -r requirements.txt
 ```
 
-On Linux or macOS, use `.venv/bin/python`. Tkinter is not installed via pip;
-on Windows, it is usually included with Python, while on Linux it may require
-a system package such as `python3-tk`. The receiver also requires a working UHD
-driver and compatible Python bindings for the installed UHD version.
+On Linux or macOS, run:
+
+```sh
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+```
+
+Tkinter is not installed via pip; on Windows, it is usually included with
+Python, while on Linux it may require a system package such as `python3-tk`.
+The receiver also requires a working UHD driver and compatible Python bindings
+for the installed UHD version.
 
 ## RIS
 

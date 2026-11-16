@@ -65,11 +65,16 @@ brew install python-tk@3.13
 
 Replace `3.13` with the installed Python minor version if necessary. The
 receiver also requires a working UHD driver and compatible Python bindings for
-the installed UHD version.
+the installed UHD version. Download the latest UHD driver release from
+[Ettus Research](https://files.ettus.com/#/binaries/uhd/latest_release).
 
 ## RIS
 
 The port configuration and default values are defined in `Ris/ris_config.py`.
+Before starting the application, set `RIS_PORT` in that file to the serial port
+used by the RIS device, for example `COM4` on Windows, `/dev/ttyUSB0` on Linux,
+or `/dev/cu.usbserial-...` on macOS. If the serial port is not detected, install
+the [FTDI Virtual COM Port drivers](https://ftdichip.com/drivers/vcp-drivers/).
 The application does not connect to the RIS at startup; the port is opened only
 when a pattern is sent.
 
@@ -79,7 +84,8 @@ when a pattern is sent.
 
 ## RX receiver
 
-The radio and OFDM parameters are defined in `Rx/rx_config.py`.
+The radio and OFDM parameters are defined in `Rx/rx_config.py`. Before starting
+the receiver, set `RX_IP` in that file to the IP address of the receiving USRP.
 
 - Windows: run `Rx/Start_RX_windows.vbs`.
 - Linux: run `sh Rx/Start_RX_linux.sh`.
@@ -91,8 +97,9 @@ The transmitter requires MATLAB, Communications Toolbox, and Communications
 Toolbox Support Package for USRP Radio. These components are not installed via
 pip.
 
-In MATLAB, navigate to the `Tx` directory, adjust the radio settings in
-`defaultConfig.m`, and then run:
+In MATLAB, navigate to the `Tx` directory and set `cfg.radio.txIPAddress` in
+`defaultConfig.m` to the IP address of the transmitting USRP. Adjust any other
+radio settings as required, and then run:
 
 ```matlab
 runTransmitter

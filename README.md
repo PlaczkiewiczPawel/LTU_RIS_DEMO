@@ -4,41 +4,62 @@ The package contains three independent components:
 
 - `Ris` — RIS control via a serial port, patterns, and polar plots.
 - `Rx` — a Python OFDM receiver with a constellation display.
-- `Tx` — a minimal OFDM transmitter for MATLAB and USRP.
+- `Tx` — a minimal OFDM transmitter for Python or MATLAB and USRP.
 
 This directory is intended to serve as the root directory of a standalone
 repository. It does not require any files from the parent repository.
 
 ## Python dependencies
 
-Python `>=3.10, <3.14` is required because the receiver depends on the UHD
+Python `>=3.10, <3.14 (3.13 recommended)` is required because the receiver depends on the UHD
 Python bindings, which are not compatible with Python 3.14 or newer.
 
-To install the dependencies into the global Python environment, run this from
-the package's root directory:
+The RIS, RX and Python TX launchers use the shared `.venv` in the repository
+root. If it is missing, they automatically run `setup_venv.py`, install the
+dependencies for the selected component and then start it. An existing
+environment with missing dependencies is completed in the same way. Internet
+access is needed when packages must be downloaded. Later launches reuse the
+environment without reinstalling working packages.
+
+On Windows, install Python with the Python launcher (`py`/`pyw`) or add it to
+`PATH`. No user-specific Python path needs to be edited. Setup opens in a
+visible console; RIS and RX then open without a console. TX keeps its console
+open so that Ctrl+C can stop transmission. On Linux/macOS, setup runs in the
+launcher's terminal; install the OS Python venv package if it is not included.
+
+To prepare all three components manually, run from the repository root:
 
 ```powershell
-python -m pip install -r requirements.txt
+py -3.12 setup_venv.py all
 ```
 
-On systems where Python 3 is available as `python3`, use:
+On Linux or macOS, use a compatible Python 3:
 
 ```sh
-python3 -m pip install -r requirements.txt
+python3 setup_venv.py all
 ```
 
-Alternatively, create a virtual environment and install the dependencies into
-it. On Windows, run:
+Replace `all` with `ris`, `rx` or `tx` to prepare only one component. The same
+command can be rerun after a failed installation. Setup preserves an existing
+environment and does not delete it. If an old `.venv` uses an incompatible
+Python, rename it and run a launcher to create a new one.
+
+The environment enables system site packages so it can reuse native UHD
+bindings installed for the base Python. Missing Python packages are installed
+inside `.venv`. UHD drivers/runtime must still be installed separately and
+match the Python UHD bindings; pip cannot install the hardware driver.
+
+For a fully manual installation on Windows:
 
 ```powershell
-python -m venv .venv
+py -3.12 -m venv --system-site-packages .venv
 .venv\Scripts\python -m pip install -r requirements.txt
 ```
 
 On Linux or macOS, run:
 
 ```sh
-python3 -m venv .venv
+python3 -m venv --system-site-packages .venv
 .venv/bin/python -m pip install -r requirements.txt
 ```
 
@@ -93,9 +114,24 @@ the receiver, set `RX_IP` in that file to the IP address of the receiving USRP.
 
 ## TX transmitter
 
-The transmitter requires MATLAB, Communications Toolbox, and Communications
-Toolbox Support Package for USRP Radio. These components are not installed via
-pip.
+### Python
+
+Set the radio and OFDM parameters in `Tx/tx_config.py`, including `TX_IP` and
+the clock source, then start:
+
+- Windows: run `Tx/Start_TX_windows.vbs`.
+- Linux: run `sh Tx/Start_TX_linux.sh`.
+- macOS: run `Tx/Start_TX_macos.command`.
+
+The launcher prepares `.venv` if needed, then starts continuous transmission
+in a console. Press Ctrl+C to stop. Startup errors remain visible until Enter
+is pressed.
+
+### MATLAB
+
+The MATLAB transmitter requires MATLAB, Communications Toolbox, and
+Communications Toolbox Support Package for USRP Radio. These components are
+not installed via pip and are independent of `.venv`.
 
 In MATLAB, navigate to the `Tx` directory and set `cfg.radio.txIPAddress` in
 `defaultConfig.m` to the IP address of the transmitting USRP. Adjust any other

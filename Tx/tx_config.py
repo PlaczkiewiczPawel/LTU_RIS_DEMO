@@ -1,11 +1,11 @@
 """Editable TX settings. Restart the transmitter after changing this file."""
 
 # Radio (same defaults as defaultConfig.m)
-TX_IP = "192.168.100.2"
+TX_IP = "192.168.10.2"
 MASTER_CLOCK_RATE = 100e6
 CENTER_FREQUENCY = 5.53e9
 SAMPLE_RATE = 1e6
-TX_GAIN = 4.0
+TX_GAIN = 2.0
 CLOCK_SOURCE = "internal"  # Requires a connected 10 MHz reference.
 CONNECTION_ATTEMPTS = 10
 CONNECTION_RETRY_INTERVAL_SECONDS = 1.0

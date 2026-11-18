@@ -211,7 +211,27 @@ def process_received_buffer(
 
 def configure_receiver() -> tuple[uhd.usrp.MultiUSRP, uhd.usrp.RXStreamer]:
     """Connect to the USRP and configure the MATLAB-compatible RX stream."""
-    usrp = uhd.usrp.MultiUSRP(f"addr={cfg.RX_IP}")
+    attempts = cfg.CONNECTION_ATTEMPTS
+    delay = cfg.CONNECTION_RETRY_INTERVAL_SECONDS
+    if type(attempts) is not int or attempts < 1:
+        raise ValueError("CONNECTION_ATTEMPTS must be a positive integer")
+    if not np.isfinite(delay) or delay < 0:
+        raise ValueError("CONNECTION_RETRY_INTERVAL_SECONDS must be finite and nonnegative")
+
+    for attempt in range(1, attempts + 1):
+        print(f"Connecting to RX USRP {cfg.RX_IP} ({attempt}/{attempts})...", flush=True)
+        try:
+            usrp = uhd.usrp.MultiUSRP(f"addr={cfg.RX_IP}")
+            break
+        except RuntimeError as exc:
+            if attempt == attempts:
+                raise RuntimeError(
+                    f"Could not connect to RX USRP {cfg.RX_IP} after {attempts} attempts. "
+                    f"Last error: {exc}"
+                ) from exc
+            print(f"Connection failed: {exc}\nRetrying in {delay:g} seconds...", flush=True)
+            time.sleep(delay)
+
     usrp.set_clock_source(cfg.CLOCK_SOURCE)
     usrp.set_rx_rate(cfg.SAMPLE_RATE, 0)
     usrp.set_rx_freq(uhd.types.TuneRequest(cfg.CENTER_FREQUENCY), 0)

@@ -96,6 +96,7 @@ class RisControlApp:
         )
         self.interval = tk.IntVar(value=cfg.DEFAULT_AUTOMATIC_INTERVAL_SECONDS)
         self.custom_angle = tk.StringVar(value="0")
+        self.plot_type = tk.StringVar(value="both")
         self.mode_angles = {
             mode: tk.StringVar(value=f"{angle:g}")
             for mode, angle in cfg.DEFAULT_MODE_ANGLES.items()
@@ -114,6 +115,8 @@ class RisControlApp:
         self.root.title("RIS 5 GHz control")
         self.root.resizable(False, False)
         self.root.geometry(f"{cfg.GUI_WINDOW_WIDTH}x{cfg.GUI_WINDOW_HEIGHT}")
+        self.root.columnconfigure(0, weight=1)
+        self.root.rowconfigure(0, weight=1)
 
         frame = ttk.Frame(
             self.root,
@@ -122,7 +125,6 @@ class RisControlApp:
             padding=18,
         )
         frame.grid(row=0, column=0, sticky="nsew")
-        frame.grid_propagate(False)
         for column in range(3):
             frame.columnconfigure(column, weight=1, uniform="mode")
         frame.rowconfigure(9, weight=1)
@@ -220,7 +222,7 @@ class RisControlApp:
         ).grid(row=8, column=0, columnspan=3, pady=(0, 10))
 
         ttk.Separator(frame).grid(
-            row=9, column=0, columnspan=3, sticky="sew", pady=(2, 10)
+            row=10, column=0, columnspan=3, sticky="sew", pady=(2, 10)
         )
         ttk.Label(
             frame,
@@ -229,20 +231,37 @@ class RisControlApp:
             justify="center",
             wraplength=cfg.GUI_STATUS_WRAP_LENGTH,
         ).grid(
-            row=10,
+            row=11,
             column=0,
             columnspan=3,
             sticky="ew",
         )
 
-        self.plot_panel = ttk.Frame(self.root, padding=(0, 18, 18, 18))
+        self.plot_panel = ttk.Frame(frame, padding=(0, 0, 0, 8))
+        plot_options = ttk.Frame(self.plot_panel)
+        plot_options.grid(row=0, column=0, pady=(0, 8))
+        ttk.Label(plot_options, text="Plot:").grid(row=0, column=0, padx=(0, 8))
+        for column, (text, value) in enumerate(
+            (("Continuous phase", "continuous_phase"),
+             ("Quantized", "quantized_1bit"),
+             ("Both", "both")),
+            start=1,
+        ):
+            ttk.Radiobutton(
+                plot_options,
+                text=text,
+                variable=self.plot_type,
+                value=value,
+                command=self._update_plot_panel,
+            ).grid(row=0, column=column, padx=5)
         self.plot_label = ttk.Label(
             self.plot_panel,
             text="Apply a RIS pattern to display its polar plot.",
             anchor="center",
-            padding=12,
         )
-        self.plot_label.grid(row=0, column=0)
+        self.plot_label.grid(row=1, column=0)
+        self.root.update_idletasks()
+        self.controls_height = frame.winfo_reqheight()
 
     def _select_manual_mode(self, mode: str) -> None:
         pattern = self._get_mode_pattern(mode)
@@ -461,7 +480,7 @@ class RisControlApp:
     def _toggle_plot_panel(self) -> None:
         self.plot_visible = not self.plot_visible
         if self.plot_visible:
-            self.plot_panel.grid(row=0, column=1, sticky="nsew")
+            self.plot_panel.grid(row=9, column=0, columnspan=3, sticky="n")
             self.plot_button.configure(text="HIDE POLAR PLOT")
             self._update_plot_panel()
         else:
@@ -487,7 +506,10 @@ class RisControlApp:
             f"pattern_{int(pattern['id']):03d}_target_"
             f"{angle_prefix}{angle_token}deg.png"
         )
-        plot_path = cfg.POLAR_PLOT_DIRECTORY / filename
+        plot_directory = cfg.POLAR_PLOT_DIRECTORY
+        if self.plot_type.get() != "both":
+            plot_directory = plot_directory / self.plot_type.get()
+        plot_path = plot_directory / filename
         if not plot_path.exists():
             self.plot_image = None
             self.plot_label.configure(
@@ -497,7 +519,11 @@ class RisControlApp:
             return
 
         try:
-            self.plot_image = tk.PhotoImage(file=str(plot_path))
+            image = tk.PhotoImage(file=str(plot_path))
+            max_width = max(1, cfg.GUI_WINDOW_WIDTH - 36)
+            max_height = max(1, self.root.winfo_screenheight() - self.controls_height - 120)
+            scale = max(1, math.ceil(max(image.width() / max_width, image.height() / max_height)))
+            self.plot_image = image.subsample(scale) if scale > 1 else image
         except tk.TclError as exc:
             self.plot_image = None
             self.plot_label.configure(image="", text=f"Cannot open plot:\n{exc}")
@@ -508,8 +534,8 @@ class RisControlApp:
 
     def _resize_root_to_content(self) -> None:
         self.root.update_idletasks()
-        width = self.root.winfo_reqwidth()
-        height = self.root.winfo_reqheight()
+        width = max(cfg.GUI_WINDOW_WIDTH, self.root.winfo_reqwidth())
+        height = max(cfg.GUI_WINDOW_HEIGHT, self.root.winfo_reqheight())
         self.root.geometry(f"{width}x{height}")
 
     def _stop_periodic(self) -> None:

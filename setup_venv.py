@@ -12,7 +12,7 @@ import venv
 ROOT = Path(__file__).resolve().parent
 ENVIRONMENT = ROOT / ".venv"
 DEPENDENCIES = {
-    "ris": {"serial": "pyserial"},
+    "ris": {"serial": "pyserial", "PIL": "pillow"},
     "rx": {"numpy": "numpy", "matplotlib": "matplotlib", "uhd": "uhd"},
     "tx": {"numpy": "numpy", "uhd": "uhd"},
 }
